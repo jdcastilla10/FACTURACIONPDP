@@ -8,8 +8,11 @@ export const productosPublico = [
   {codigo:"KIT03",nombre:"KIT CORPORAL ANTIMANCHAS",	precio:128460},
   {codigo:"KIT02",nombre:"KIT ANTI ACNE",	precio:281320},
   {codigo:"KIT01",nombre:"KIT ANTI MANCHAS FACIALES",	precio:182970},
-  {codigo:"PROF19",nombre:"BLOQUEADOR SIN COLOR  60g",	precio:86000},
-  {codigo:"PROF13",nombre:"CREMA DERMOREPARADORA  60g",	precio:139800},
+  {codigo:"PROF19",nombre:"BLOQUEADOR SIN COLOR  60g PROF",	precio:86000},
+  {codigo:"PROF13",nombre:"CREMA DERMOREPARADORA  60g PROF",	precio:139800},
+  {codigo:"PROF14",nombre:"GEL FACIAL DERMOLIMPIADOR 120ml PROF",	precio:49000},
+  {codigo:"PROF16",nombre:"MASC. & EXFOLIANTE VERDE 120g PROF",	precio:45920},
+  {codigo:"PROF09",nombre:"OLEO VITAL 7 60ml PROF",	precio:79000},
   {codigo:"TEC05",nombre:"OLEO VITAL 7 X 50 ML",precio:79000},
   {codigo:"TEC04",nombre:"CONTORNO DE OJOS 15G",precio:77000},
   {codigo:"TEC03",nombre:"SERUM VITAMINA C 30 mL",precio:91000},
@@ -22,6 +25,9 @@ export const productosPublico = [
   {codigo:"TEC08",nombre:"TÓNICO ACLARANTE CORPORAL 50 ml",precio:83460},
   {codigo:"TEC09",nombre:"TÓNICO DERMO REPARADOR FACIAL 50 ml",precio:83460},
   {codigo:"TEC10",nombre:"CREMA DERMO REPARADORA 30g",precio:99510},
+  {codigo:"SERV4",nombre:"FLETE NACIONAL",precio:13000},
+  {codigo:"SERV5",nombre:"FLETE NACIONAL",precio:16000},
+
 ];
 
 //LISTA DEL 15
@@ -57,13 +63,17 @@ export const productosTecProfesional = [
   {codigo:"TEC08",nombre:"TÓNICO ACLARANTE CORPORAL 50 ml",precio:70941},
   {codigo:"TEC09",nombre:"TÓNICO DERMO REPARADOR FACIAL 50 ml",precio:70941},
   {codigo:"TEC10",nombre:"CREMA DERMO REPARADORA 30g",precio:84584},
+  {codigo:"SERV4",nombre:"FLETE NACIONAL",precio:20000},
+  {codigo:"SERV5",nombre:"FLETE NACIONAL",precio:13000},
 ];
 
 //LISTA DEL 25
 export const productosDistJunior = [
   {codigo:"PROF21",nombre:"CONTORNO DE OJOS  15g",	precio:38461},
-  {codigo:"PROF20",nombre:"BLOQUEADOR CON COLOR 60g",	precio:89394},
-  {codigo:"PROF19",nombre:"BLOQUEADOR SIN COLOR  60g",	precio:89394},
+  // {codigo:"PROF20",nombre:"BLOQUEADOR CON COLOR 60g",	precio:89394},
+  // {codigo:"PROF19",nombre:"BLOQUEADOR SIN COLOR  60g",	precio:89394},
+   {codigo:"PROF20",nombre:"BLOQUEADOR CON COLOR 60g",	precio:79200},
+  {codigo:"PROF19",nombre:"BLOQUEADOR SIN COLOR  60g",	precio:71200},
   {codigo:"PROF18",nombre:"MASC. & EXFOLIANTE AZUL ANTIOXIDANTE 120g",	precio:72018},
   {codigo:"PROF17",nombre:"MASC. & EXFOLIANTE ROSA ANTIEDAD 120g",	precio:72018},
   {codigo:"PROF16",nombre:"MASC. & EXFOLIANTE VERDE 120g",	precio:72018},
@@ -87,6 +97,7 @@ export const productosDistJunior = [
   {codigo:"TEC08",nombre:"TÓNICO ACLARANTE CORPORAL 50 ml",precio:62595},
   {codigo:"TEC09",nombre:"TÓNICO DERMO REPARADOR FACIAL 50 ml",precio:62595},
   {codigo:"TEC10",nombre:"CREMA DERMO REPARADORA 30g",precio:74633},
+  {codigo:"SERV4",nombre:"FLETE NACIONAL",precio:20000},
 ];
 //LISTA DEL 30
 export const productosAliado = [
@@ -116,6 +127,7 @@ export const productosAliado = [
   {codigo:"TEC08",nombre:"TÓNICO ACLARANTE CORPORAL 50 ml",precio:49659},
   {codigo:"TEC09",nombre:"TÓNICO DERMO REPARADOR FACIAL 50 ml",precio:49659},
   {codigo:"TEC10",nombre:"CREMA DERMO REPARADORA 30g",precio:59208},
+  {codigo:"SERV4",nombre:"FLETE NACIONAL",precio:20000},
 ];
 
 

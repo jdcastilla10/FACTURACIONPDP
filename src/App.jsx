@@ -2,10 +2,12 @@ import { useState } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logo from "./assets/logo.png";
-import {productosPublico as productosBase} from "./data/productos";
-//import {productosTecProfesional as productosBase} from "./data/productos";
-//import {productosDistJunior as productosBase} from "./data/productos";
-//import {productosAliado as productosBase} from "./data/productos";
+import {
+  productosPublico,
+  productosTecProfesional,
+  productosDistJunior,
+  productosAliado
+} from "./data/productos";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -29,6 +31,8 @@ export default function App() {
     ciudad: ""
   });
 
+  const [listaPrecio, setListaPrecio] = useState("TEC_PROFESIONAL");
+
   const [items, setItems] = useState([]);
   const [productoSeleccionado, setProductoSeleccionado] = useState("");
   const [metodoPago, setMetodoPago] = useState("Bancolombia");
@@ -39,6 +43,27 @@ export default function App() {
   const [fecha, setFecha] = useState("");
   const [facturasCSV, setFacturasCSV] = useState([]);
   const [registroFacturas, setRegistroFacturas] = useState([]);
+
+  const obtenerProductos = () => {
+  switch (listaPrecio) {
+    case "PUBLICO":
+      return productosPublico;
+
+    case "TEC_PROFESIONAL":
+      return productosTecProfesional;
+
+    case "DISTRIBUIDOR":
+      return productosDistJunior;
+
+    case "ALIADO":
+      return productosAliado;
+
+    default:
+      return productosTecProfesional;
+  }
+};
+
+const productosBase = obtenerProductos();
 
   const agregarProducto = () => {
     const prod = productosBase.find(p => p.codigo === productoSeleccionado);
@@ -97,7 +122,9 @@ const formatearPago = (pago) => {
   if (pago === "Bancolombia") return "BANCO";
   if (pago === "Nequi") return "NEQUI";
   if (pago === "Daviplata") return "DAVIPLATA";
-  if (pago === "Crédito") return "CREDITO";
+  if (pago === "Addi") return "ADDI";
+  if (pago === "Payu") return "PAYU";
+  if (pago === "Contraentrega") return "CONTRAENTREGA";
   return pago;
 };
 
@@ -275,37 +302,28 @@ datosEmpresa.forEach(linea => {
 };
 //esto es para automatizar las facturas subiendo un csv
 
-const normalizarPago = (metodo, tags) => {
-  if (!metodo) return "BANCO";
+const normalizarPago = (tags) => {
+  const tagsUpper = (tags || "").trim().toUpperCase();
 
-  const metodoUpper = metodo.toUpperCase();
-  const tagsUpper = (tags || "").toUpperCase();
-
-  // 🔥 PAYU
-  if (metodoUpper.includes("PAYU")) {
+  if (!tagsUpper) {
     return "BANCO";
   }
 
-  // 🔥 BANCOLOMBIA
-  if (metodoUpper.includes("BANCOLOMBIA")) {
-    return "BANCO";
+  return tagsUpper;
+};
+
+const normalizarCanal = (source) => {
+  const sourceUpper = (source || "").toLowerCase();
+
+  if (sourceUpper === "web") {
+    return "WEB";
   }
 
-  // 🔥 MANUAL → usar TAGS
-  if (metodoUpper.includes("MANUAL")) {
-    if (!tagsUpper) return "BANCO";
-
-    // aquí puedes personalizar más si quieres
-    if (tagsUpper.includes("NEQUI")) return "NEQUI";
-    if (tagsUpper.includes("DAVIPLATA")) return "DAVIPLATA";
-    if (tagsUpper.includes("BANCO")) return "BANCO";
-    if (tagsUpper.includes('PAY U')) return "BANCO";
-    console.log({tagsUpper})
-    return tagsUpper; // fallback
+  if (sourceUpper === "shopify_draft_order") {
+    return "VPUBLICO";
   }
 
-  // 🔥 DEFAULT
-  return "BANCO";
+  return "WEB";
 };
 
 const agruparPedidos = (data) => {
@@ -325,10 +343,14 @@ const agruparPedidos = (data) => {
         },
         metodoPago: row["Payment Method"],
         tags: row["Tags"],
+        source: row["Source"],
         notas: row.Notes || "",
         shipping: Number(row["Shipping"] || 0),
         fecha: row["Created at"],
         orden:id,
+        descuentoTotal:
+      pedidos[id]?.descuentoTotal ||
+      Number(row["Discount Amount"] || 0),
         items: []
       };
     }
@@ -343,6 +365,37 @@ const agruparPedidos = (data) => {
   });
 
   return Object.values(pedidos);
+};
+
+const aplicarDescuentoProporcional = (items, descuentoTotal) => {
+
+  console.log(descuentoTotal)
+
+  if (!descuentoTotal || descuentoTotal <= 0) return items;
+
+  // 🔥 excluir envío
+  const itemsSinEnvio = items.filter(i => i.codigo !== "SERV4");
+
+  const totalSinDescuento = itemsSinEnvio.reduce(
+    (acc, item) => acc + item.precio * item.cantidad,
+    0
+  );
+
+  if (totalSinDescuento === 0) return items;
+
+  // 🔥 porcentaje real
+  const porcentaje = (descuentoTotal / totalSinDescuento) * 100;
+
+  return items.map(item => {
+    if (item.codigo === "SERV4") {
+      return { ...item, descuento: 0 };
+    }
+
+    return {
+      ...item,
+      descuento: porcentaje
+    };
+  });
 };
 
 const handleCSV = (e) => {
@@ -368,6 +421,7 @@ const formatearFechaCSV = (fecha) => {
   return `${day}-${month}-${year}`;
 };
 
+//aquiiiiiiiiiiiiiiiiiiii
 const generarPDFCSV = (factura) => {
   if (!factura.items || factura.items.length === 0) {
     alert("Factura sin productos");
@@ -473,17 +527,22 @@ const generarPDFCSV = (factura) => {
   y += 5;
   doc.text(`Ciudad: ${cliente.ciudad || ""}`, margin2, y);
 
+  const itemsConDescuento = aplicarDescuentoProporcional(
+  factura.items,
+  factura.descuentoTotal
+);
+
   // 🧾 PRODUCTOS
-  let rows = factura.items.map(item => {
-  const subtotal = item.precio * item.cantidad;
-  const descuento = subtotal * (item.descuento / 100);
+const rows = itemsConDescuento.map(item => {
+  const precioConDesc = item.precio * (1 - item.descuento / 100);
+  const total = precioConDesc * item.cantidad;
 
   return [
     item.codigo,
     item.nombre,
     item.cantidad,
-    `$${item.precio}`,
-    `$${(subtotal - descuento).toFixed(0)}`
+    `$${precioConDesc.toFixed(0)}`, // 🔥 AQUÍ
+    `$${total.toFixed(0)}`
   ];
 });
 
@@ -507,7 +566,7 @@ if (factura.shipping && factura.shipping > 0) {
   const finalY = doc.lastAutoTable.finalY;
 
   // 🔥 TOTAL
- let total = factura.items.reduce((acc, item) => {
+ let total = itemsConDescuento.reduce((acc, item) => {
   const subtotal = item.precio * item.cantidad;
   const descuento = subtotal * (item.descuento / 100);
   return acc + (subtotal - descuento);
@@ -518,6 +577,7 @@ if (factura.shipping) {
   total += Number(factura.shipping);
 }
 
+
   doc.setFont(undefined, "bold");
 
   doc.text(`Total: $${total.toFixed(0)}`, pageWidth - 20, finalY + 10, {
@@ -527,14 +587,19 @@ if (factura.shipping) {
   // 🔥 PAGO Y NOTAS
   console.log(factura.tags)
   const pagoNormalizado = normalizarPago(
-  factura.metodoPago,
   factura.tags
-)
+);
 
 
 
   const pagoLimpio = limpiarTexto(pagoNormalizado);
-  const canalLimpio = limpiarTexto(factura.canal || "WEB");
+  const canalCSV = normalizarCanal(
+  factura.source
+);
+
+const canalLimpio = limpiarTexto(
+  canalCSV
+);
 
   doc.text(`Medio de Pago: ${pagoLimpio}`, margin2, finalY + 20);
   doc.text(`Notas: ${factura.notas || ""}`, margin2, finalY + 30);
@@ -557,7 +622,7 @@ const nuevaFila = {
   FACTURA: consecutivo,
   CLIENTE: factura.cliente.nombre,
   VALOR: totals.toFixed(0),
-  CANAL: factura.canal || "WEB",
+  CANAL: normalizarCanal(factura.source),
   MEDIO_PAGO: pagoNormalizado
 };
 
@@ -602,8 +667,7 @@ const exportarExcel = () => {
 >
   Descargar Cuaderno
 </button>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="flex flex-col">
+<div className="flex flex-col">
 
             <label className="text-sm font-semibold mb-1 text-gray-500">
               Consecutivo Manual
@@ -611,11 +675,14 @@ const exportarExcel = () => {
             <input
               type="number"
               placeholder="Consecutivo manual (opcional)"
-              className="border p-2 rounded-lg w-full"
+              className="border p-2 rounded-lg"
               value={consecutivoManual}
               onChange={(e) => setConsecutivoManual(e.target.value)}
             />
           </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          
           <div className="flex flex-col">
             <label className="text-sm font-semibold mb-1 text-gray-500">
               Canal de Compra
@@ -629,6 +696,22 @@ const exportarExcel = () => {
               <option>WEB</option>
               <option>DISTRIBUIDORA</option>
               <option>COSMETOLOGA</option>
+            </select>
+          </div>
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold mb-1 text-gray-500">
+              Lista de Precios
+            </label>
+
+            <select
+              className="border p-2 rounded-lg w-full"
+              value={listaPrecio}
+              onChange={(e) => setListaPrecio(e.target.value)}
+            >
+              <option value="PUBLICO">Público</option>
+              <option value="TEC_PROFESIONAL">Tec Profesional</option>
+              <option value="DISTRIBUIDOR">Distribuidor</option>
+              <option value="ALIADO">Aliado</option>
             </select>
           </div>
           <div className="flex flex-col">
@@ -697,7 +780,7 @@ const exportarExcel = () => {
           </div>
 
          {items.map((item, i) => (
-  <div key={i} className="grid grid-cols-6 gap-2 items-center">
+  <div key={i} className="grid grid-cols-7 gap-2 items-center">
     
     <span className="font-semibold">{item.nombre}</span>
 
@@ -716,7 +799,14 @@ const exportarExcel = () => {
       onChange={e => actualizarItem(i, "descuento", Number(e.target.value))}
     />
 
-    <span>${item.precio}</span>
+    <input
+      type="number"
+      className="border p-1 rounded"
+      value={item.precio}
+      onChange={(e) =>
+        actualizarItem(i, "precio", Number(e.target.value))
+      }
+    />
 
     <span className="font-bold">
       ${(item.precio * item.cantidad * (1 - item.descuento / 100)).toFixed(0)}
@@ -750,9 +840,11 @@ const exportarExcel = () => {
               onChange={e => setMetodoPago(e.target.value)}
             >
               <option>Bancolombia</option>
+              <option>Payu</option>
               <option>Nequi</option>
-              <option>Crédito</option>
+              <option>Addi</option>
               <option>Daviplata</option>
+              <option>Contraentrega</option>
             </select>
 
           </div>
